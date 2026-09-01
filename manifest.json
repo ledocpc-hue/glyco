@@ -2,7 +2,7 @@
   "name": "Glycotrace",
   "short_name": "Glycotrace",
   "description": "Estimation de l'impact glycemique de vos repas a partir de l'index glycemique.",
-  "start_url": "./glycotrace.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
