@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.ledocpc_hue.twa",
+        "sha256_cert_fingerprints": ["BC:55:FE:C7:8B:F3:19:7D:1C:85:3C:7A:5A:6E:11:BE:29:79:C8:4E:1B:30:93:72:E6:F6:A7:B2:CB:70:44:A7"]
+      }
+    }]
