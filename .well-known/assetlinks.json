@@ -3,6 +3,6 @@
   "target": {
     "namespace": "android_app",
     "package_name": "io.github.ledocpc_hue.twa",
-    "sha256_cert_fingerprints": ["BC:55:FE:C7:8B:F3:19:7D:1C:85:3C:7A:5A:6E:11:BE:29:79:C8:4E:1B:30:93:72:E6:F6:A7:B2:CB:70:44:A7"]
+    "sha256_cert_fingerprints": ["DA:4C:F9:6B:08:7D:70:5A:8A:95:63:EF:79:10:F4:8C:BB:D2:0B:8A:DC:64:EC:8D:51:13:81:28:FD:50:65:8D"]
   }
 }]
