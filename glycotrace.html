@@ -324,6 +324,16 @@
   /* Tous les boutons : forme ronde, texte noir en gras */
   button{border-radius:999px !important;color:#000 !important;font-weight:700 !important;}
 
+  .trial-btn{
+    background:linear-gradient(135deg,#F5C569,#EDB24A);
+    border:1px solid #DB9E36 !important;padding:6px 16px;border-radius:999px;
+    font-weight:700;font-size:0.82rem;cursor:pointer;
+    box-shadow:0 4px 10px rgba(224,160,60,.3);
+    transition:transform .15s;
+  }
+  .trial-btn:hover{transform:translateY(-1px);}
+  .trial-btn.expired{background:linear-gradient(135deg,#E8847A,#D4655A);border-color:#C04E42 !important;box-shadow:0 4px 10px rgba(212,101,90,.35);}
+
   .summary-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;}
   .stat{
     position:relative;
@@ -575,6 +585,8 @@
     .del-btn:hover{background:#3A2017;color:#EF9A8A;}
     button.reset-btn{background:#3A211B;color:#EFA08B;border-color:#000;}
     button.reset-btn:hover{background:#45251E;}
+    .trial-btn{background:linear-gradient(135deg,#7A5C1A,#6B4E14);border-color:#8A6A24 !important;box-shadow:0 4px 10px rgba(0,0,0,.35);}
+    .trial-btn.expired{background:linear-gradient(135deg,#6B2E26,#55211B);border-color:#7D3830 !important;}
     .notice-close{background:var(--surface-2);color:var(--muted);}
     .notice-close:hover{background:var(--line-soft);color:var(--ink);}
     select:focus, input:focus{box-shadow:0 0 0 4px rgba(88,164,136,.28), var(--shadow-sm);}
@@ -605,6 +617,7 @@
         <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
           <h1>Glycotrace</h1>
           <span style="font-weight:700;color:var(--muted);font-size:0.85rem;">Version : 1.2</span>
+          <button type="button" id="trialBtn" class="trial-btn">Version de test</button>
         </div>
         <p class="tagline">Estimation de l'impact glycémique de vos repas à partir de l'index glycémique et des quantités ingérées.</p>
       </div>
@@ -666,6 +679,23 @@
         <h3 style="color:var(--primary-dark);margin-top:12px;">Vos données restent privées</h3>
         <p>Aucune donnée n'est envoyée en ligne. Tout (historique de vos repas, identité, aliments personnalisés) est conservé et enregistré uniquement sur cet appareil, dans votre navigateur.</p>
         <button type="button" id="welcomeOkBtn" class="primary" style="margin:18px auto 0;width:auto;display:inline-block;padding:12px 32px;">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="trialExpiredOverlay" class="notice-overlay">
+    <div class="notice-modal" style="max-width:460px;">
+      <div class="notice-modal-header">
+        <h2 style="margin:0;">Version de test expirée</h2>
+      </div>
+      <div class="notice-body" style="text-align:center;">
+        <svg width="46" height="46" viewBox="0 0 24 24" style="fill:none;stroke:#C05F52;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin:0 auto 4px;display:block;">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 7v5l3 2"/>
+        </svg>
+        <h3 style="color:#B04A3E;margin-top:12px;">Votre période d'essai de 14 jours est terminée</h3>
+        <p>Merci d'avoir testé Glycotrace ! Pour continuer à utiliser l'application, contactez l'éditeur pour obtenir la version complète.</p>
+        <button type="button" id="trialExpiredOkBtn" class="reset-btn" style="margin:18px auto 0;width:auto;display:inline-block;">Comprendre</button>
       </div>
     </div>
   </div>
@@ -1204,6 +1234,48 @@ document.getElementById('welcomeOkBtn').addEventListener('click', ()=>{
   welcomeOverlay.classList.remove('open');
 });
 showWelcomeIfFirstRun();
+
+// --- Période d'essai limitée à 14 jours ---
+const TRIAL_KEY = 'glycotrace:trialStart';
+const TRIAL_DAYS = 14;
+const trialBtn = document.getElementById('trialBtn');
+const trialExpiredOverlay = document.getElementById('trialExpiredOverlay');
+
+function trialDaysLeft(){
+  try{
+    let start = parseInt(localStorage.getItem(TRIAL_KEY), 10);
+    if(!start || isNaN(start)){
+      start = Date.now();
+      localStorage.setItem(TRIAL_KEY, String(start));
+    }
+    const elapsedMs = Date.now() - start;
+    const elapsedDays = Math.floor(elapsedMs / (1000*60*60*24));
+    return Math.max(0, TRIAL_DAYS - elapsedDays);
+  }catch(e){ return TRIAL_DAYS; }
+}
+
+function updateTrialUI(){
+  const left = trialDaysLeft();
+  if(left <= 0){
+    trialBtn.textContent = 'Test expiré';
+    trialBtn.classList.add('expired');
+    trialExpiredOverlay.classList.add('open');
+  }else{
+    trialBtn.textContent = 'Version de test — ' + left + ' j restant' + (left > 1 ? 's' : '');
+    trialBtn.classList.remove('expired');
+  }
+}
+
+document.getElementById('trialExpiredOkBtn').addEventListener('click', ()=>{
+  trialExpiredOverlay.classList.remove('open');
+});
+trialExpiredOverlay.addEventListener('click', (e)=>{
+  if(e.target === trialExpiredOverlay) trialExpiredOverlay.classList.remove('open');
+});
+trialBtn.addEventListener('click', ()=>{
+  trialExpiredOverlay.classList.toggle('open');
+});
+updateTrialUI();
 
 document.getElementById('resetAllBtn').addEventListener('click', ()=>{
   const confirmed = window.confirm(
