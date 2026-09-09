@@ -700,6 +700,23 @@
     </div>
   </div>
 
+  <div id="trialInfoOverlay" class="notice-overlay">
+    <div class="notice-modal" style="max-width:460px;">
+      <div class="notice-modal-header">
+        <h2 style="margin:0;">Version de test</h2>
+      </div>
+      <div class="notice-body" style="text-align:center;">
+        <svg width="46" height="46" viewBox="0 0 24 24" style="fill:none;stroke:#3E8168;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;margin:0 auto 4px;display:block;">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 7v5l3 2"/>
+        </svg>
+        <h3 style="color:var(--primary-dark);margin-top:12px;">Vous êtes en période d'essai</h3>
+        <p id="trialInfoDaysText">Il vous reste 14 jours d'utilisation gratuite.</p>
+        <button type="button" id="trialInfoOkBtn" class="primary" style="margin:18px auto 0;width:auto;display:inline-block;padding:12px 32px;">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div class="disclaimer">
     <svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:-3px;margin-right:6px;flex-shrink:0;">
       <path d="M12 2 L23 21 L1 21 Z" fill="none" stroke="#C05F52" stroke-width="2" stroke-linejoin="round"/>
@@ -1240,6 +1257,8 @@ const TRIAL_KEY = 'glycotrace:trialStart';
 const TRIAL_DAYS = 14;
 const trialBtn = document.getElementById('trialBtn');
 const trialExpiredOverlay = document.getElementById('trialExpiredOverlay');
+const trialInfoOverlay = document.getElementById('trialInfoOverlay');
+const trialInfoDaysText = document.getElementById('trialInfoDaysText');
 
 function trialDaysLeft(){
   try{
@@ -1252,6 +1271,12 @@ function trialDaysLeft(){
     const elapsedDays = Math.floor(elapsedMs / (1000*60*60*24));
     return Math.max(0, TRIAL_DAYS - elapsedDays);
   }catch(e){ return TRIAL_DAYS; }
+}
+
+function openTrialInfo(){
+  const left = trialDaysLeft();
+  trialInfoDaysText.textContent = 'Il vous reste ' + left + ' jour' + (left > 1 ? 's' : '') + " d'utilisation gratuite.";
+  trialInfoOverlay.classList.add('open');
 }
 
 function updateTrialUI(){
@@ -1267,13 +1292,26 @@ function updateTrialUI(){
 }
 
 document.getElementById('trialExpiredOkBtn').addEventListener('click', ()=>{
+  const left = trialDaysLeft();
   trialExpiredOverlay.classList.remove('open');
+  if(left > 0) openTrialInfo();
 });
 trialExpiredOverlay.addEventListener('click', (e)=>{
   if(e.target === trialExpiredOverlay) trialExpiredOverlay.classList.remove('open');
 });
+document.getElementById('trialInfoOkBtn').addEventListener('click', ()=>{
+  trialInfoOverlay.classList.remove('open');
+});
+trialInfoOverlay.addEventListener('click', (e)=>{
+  if(e.target === trialInfoOverlay) trialInfoOverlay.classList.remove('open');
+});
 trialBtn.addEventListener('click', ()=>{
-  trialExpiredOverlay.classList.toggle('open');
+  const left = trialDaysLeft();
+  if(left <= 0){
+    trialExpiredOverlay.classList.add('open');
+  }else{
+    openTrialInfo();
+  }
 });
 updateTrialUI();
 
