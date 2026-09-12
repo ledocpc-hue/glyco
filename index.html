@@ -333,6 +333,8 @@
   }
   .trial-btn:hover{transform:translateY(-1px);}
   .trial-btn.expired{background:linear-gradient(135deg,#E8847A,#D4655A);border-color:#C04E42 !important;box-shadow:0 4px 10px rgba(212,101,90,.35);}
+  .trial-btn.licensed{background:linear-gradient(135deg,#7FD0C4,#56B4A7);border-color:#3E8F83 !important;box-shadow:0 4px 10px rgba(63,151,138,.35);}
+  .trial-btn.licensed:disabled{cursor:default;opacity:1;transform:none;pointer-events:none;}
 
   .summary-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:18px;}
   .stat{
@@ -587,6 +589,7 @@
     button.reset-btn:hover{background:#45251E;}
     .trial-btn{background:linear-gradient(135deg,#7A5C1A,#6B4E14);border-color:#8A6A24 !important;box-shadow:0 4px 10px rgba(0,0,0,.35);}
     .trial-btn.expired{background:linear-gradient(135deg,#6B2E26,#55211B);border-color:#7D3830 !important;}
+    .trial-btn.licensed{background:linear-gradient(135deg,#1F4034,#163127);border-color:#2C5A48 !important;}
     .notice-close{background:var(--surface-2);color:var(--muted);}
     .notice-close:hover{background:var(--line-soft);color:var(--ink);}
     select:focus, input:focus{box-shadow:0 0 0 4px rgba(88,164,136,.28), var(--shadow-sm);}
@@ -693,9 +696,10 @@
           <circle cx="12" cy="12" r="9"/>
           <path d="M12 7v5l3 2"/>
         </svg>
-        <h3 style="color:#B04A3E;margin-top:12px;">Votre période d'essai de 14 jours est terminée</h3>
-        <p>Merci d'avoir testé Glycotrace ! Pour continuer à utiliser l'application, contactez l'éditeur pour obtenir la version complète.</p>
-        <button type="button" id="trialExpiredOkBtn" class="reset-btn" style="margin:18px auto 0;width:auto;display:inline-block;">Comprendre</button>
+        <h3 style="color:#B04A3E;margin-top:12px;">Votre période d'essai est terminée</h3>
+        <p>Merci d'avoir testé Glycotrace ! Pour continuer à utiliser l'application, contactez l'éditeur pour obtenir votre code d'activation.</p>
+        <button type="button" id="trialExpiredOkBtn" class="reset-btn" style="margin:14px auto 0;width:auto;display:inline-block;">Comprendre</button>
+        <button type="button" id="openActivationFromExpiredBtn" class="primary" style="margin:10px auto 0;width:auto;display:block;padding:12px 28px;">J'ai un code d'activation</button>
       </div>
     </div>
   </div>
@@ -713,6 +717,22 @@
         <h3 style="color:var(--primary-dark);margin-top:12px;">Vous êtes en période d'essai</h3>
         <p id="trialInfoDaysText">Il vous reste 14 jours d'utilisation gratuite.</p>
         <button type="button" id="trialInfoOkBtn" class="primary" style="margin:18px auto 0;width:auto;display:inline-block;padding:12px 32px;">OK</button>
+        <button type="button" id="openActivationFromInfoBtn" class="reset-btn" style="margin:10px auto 0;width:auto;display:block;">J'ai un code d'activation</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="activationOverlay" class="notice-overlay">
+    <div class="notice-modal" style="max-width:440px;">
+      <div class="notice-modal-header">
+        <h2 style="margin:0;">Activer Glycotrace</h2>
+      </div>
+      <div class="notice-body" style="text-align:center;">
+        <p>Saisissez votre code d'activation pour obtenir la version complète.</p>
+        <input type="text" id="activationInput" placeholder="Votre code..." autocapitalize="characters" spellcheck="false" autocomplete="off" style="width:100%;max-width:280px;text-align:center;font-weight:700;letter-spacing:.06em;padding:12px;border-radius:12px;border:1px solid var(--line);font-size:1rem;">
+        <button type="button" id="activationOkBtn" class="primary" style="margin:14px auto 0;width:auto;display:inline-block;padding:12px 32px;">Activer</button>
+        <p id="activationMsg" style="margin-top:10px;color:var(--danger);font-weight:700;min-height:1.3em;"></p>
+        <button type="button" id="activationCancelBtn" class="reset-btn" style="margin:6px auto 0;width:auto;display:inline-block;">Annuler</button>
       </div>
     </div>
   </div>
@@ -1255,12 +1275,83 @@ showWelcomeIfFirstRun();
 // --- Période d'essai limitée à 14 jours ---
 const TRIAL_KEY = 'glycotrace:trialStart';
 const TRIAL_DAYS = 3;
+const LICENSE_KEY = 'glycotrace:license';
+const ACTIVATION_CODE = 'GLYCO2026AB';
+const ACTIVATION_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyqB_CUoGrl2YaSUrAAuzduPODfgIpDsA942FPEIG1cZZIEY7Kj-44GJpTL3_Im7HJ49w/exec';
+const activationOkBtn = document.getElementById('activationOkBtn');
 const trialBtn = document.getElementById('trialBtn');
 const trialExpiredOverlay = document.getElementById('trialExpiredOverlay');
 const trialInfoOverlay = document.getElementById('trialInfoOverlay');
 const trialInfoDaysText = document.getElementById('trialInfoDaysText');
+const activationOverlay = document.getElementById('activationOverlay');
+const activationInput = document.getElementById('activationInput');
+const activationMsg = document.getElementById('activationMsg');
+
+function isLicensed(){
+  try{ return localStorage.getItem(LICENSE_KEY) === '1'; }catch(e){ return false; }
+}
+
+function setActivationMsg(text, isError){
+  activationMsg.textContent = text;
+  activationMsg.style.color = isError ? 'var(--danger)' : 'var(--primary-dark)';
+}
+
+function finalizeActivation(){
+  try{ localStorage.setItem(LICENSE_KEY, '1'); }catch(e){}
+  setActivationMsg('✔ Version complète activée !');
+  activationOverlay.classList.remove('open');
+  trialExpiredOverlay.classList.remove('open');
+  trialInfoOverlay.classList.remove('open');
+  updateTrialUI();
+}
+
+function tryActivate(){
+  const code = (activationInput.value || '').trim().toUpperCase();
+  if(!code){
+    setActivationMsg('✖ Saisissez un code d\'activation.', true);
+    return;
+  }
+  const activateLocally = () => {
+    if(code === ACTIVATION_CODE.toUpperCase()){
+      finalizeActivation();
+    }else{
+      setActivationMsg('✖ Code invalide. Vérifiez votre code et réessayez.', true);
+    }
+  };
+  if(!ACTIVATION_ENDPOINT){
+    activateLocally();
+    return;
+  }
+  activationOkBtn.disabled = true;
+  setActivationMsg('⏳ Vérification en cours…', false);
+  const sep = ACTIVATION_ENDPOINT.includes('?') ? '&' : '?';
+  fetch(ACTIVATION_ENDPOINT + sep + 'code=' + encodeURIComponent(code))
+    .then(res => res.text())
+    .then(txt => {
+      const t = txt.trim().toUpperCase();
+      if(t === 'VALID'){
+        finalizeActivation();
+      }else if(t === 'USED'){
+        setActivationMsg('✖ Ce code a déjà été utilisé sur un autre appareil.', true);
+      }else{
+        setActivationMsg('✖ Code invalide. Vérifiez votre code et réessayez.', true);
+      }
+    })
+    .catch(()=>{
+      setActivationMsg('✖ Erreur de connexion. Vérifiez votre accès internet et réessayez.', true);
+    })
+    .finally(()=>{ activationOkBtn.disabled = false; });
+}
+
+function openActivation(){
+  activationInput.value = '';
+  activationMsg.textContent = '';
+  activationOverlay.classList.add('open');
+  setTimeout(()=>{ try{ activationInput.focus(); }catch(e){} }, 60);
+}
 
 function trialDaysLeft(){
+  if(isLicensed()) return TRIAL_DAYS;
   try{
     let start = parseInt(localStorage.getItem(TRIAL_KEY), 10);
     if(!start || isNaN(start)){
@@ -1275,26 +1366,40 @@ function trialDaysLeft(){
 
 function openTrialInfo(){
   const left = trialDaysLeft();
+  if(isLicensed()){
+    trialInfoDaysText.textContent = 'Glycotrace est activé en version complète.';
+    trialInfoOverlay.classList.add('open');
+    return;
+  }
   trialInfoDaysText.textContent = 'Il vous reste ' + left + ' jour' + (left > 1 ? 's' : '') + " d'utilisation gratuite.";
   trialInfoOverlay.classList.add('open');
 }
 
 function updateTrialUI(){
+  if(isLicensed()){
+    trialBtn.textContent = 'Version complète ✓';
+    trialBtn.classList.remove('expired');
+    trialBtn.classList.add('licensed');
+    trialBtn.disabled = true;
+    trialExpiredOverlay.classList.remove('open');
+    return;
+  }
   const left = trialDaysLeft();
+  trialBtn.disabled = false;
   if(left <= 0){
     trialBtn.textContent = 'Test expiré';
     trialBtn.classList.add('expired');
+    trialBtn.classList.remove('licensed');
     trialExpiredOverlay.classList.add('open');
   }else{
     trialBtn.textContent = 'Version de test — ' + left + ' j restant' + (left > 1 ? 's' : '');
     trialBtn.classList.remove('expired');
+    trialBtn.classList.remove('licensed');
   }
 }
 
 document.getElementById('trialExpiredOkBtn').addEventListener('click', ()=>{
-  const left = trialDaysLeft();
   trialExpiredOverlay.classList.remove('open');
-  if(left > 0) openTrialInfo();
 });
 trialExpiredOverlay.addEventListener('click', (e)=>{
   if(e.target === trialExpiredOverlay) trialExpiredOverlay.classList.remove('open');
@@ -1306,12 +1411,28 @@ trialInfoOverlay.addEventListener('click', (e)=>{
   if(e.target === trialInfoOverlay) trialInfoOverlay.classList.remove('open');
 });
 trialBtn.addEventListener('click', ()=>{
+  if(isLicensed()){
+    openTrialInfo();
+    return;
+  }
   const left = trialDaysLeft();
   if(left <= 0){
     trialExpiredOverlay.classList.add('open');
   }else{
     openTrialInfo();
   }
+});
+document.getElementById('openActivationFromExpiredBtn').addEventListener('click', openActivation);
+document.getElementById('openActivationFromInfoBtn').addEventListener('click', openActivation);
+document.getElementById('activationOkBtn').addEventListener('click', tryActivate);
+activationInput.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') tryActivate();
+});
+document.getElementById('activationCancelBtn').addEventListener('click', ()=>{
+  activationOverlay.classList.remove('open');
+});
+activationOverlay.addEventListener('click', (e)=>{
+  if(e.target === activationOverlay) activationOverlay.classList.remove('open');
 });
 updateTrialUI();
 
