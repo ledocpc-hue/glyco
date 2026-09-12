@@ -660,11 +660,6 @@
         <p>Les valeurs de glucides proviennent de la table officielle <strong>Ciqual (ANSES)</strong>. L'index glycémique reste une estimation pédagogique générale.</p>
 
         <p style="margin-top:16px;color:var(--muted);font-size:0.85rem;">Toutes vos données restent stockées uniquement sur cet appareil — rien n'est envoyé en ligne. Pensez à exporter une sauvegarde pour préserver vos données en cas de changement d'appareil.</p>
-
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--line);text-align:center;">
-          <button type="button" id="resetAllBtn" class="reset-btn">Réinitialiser toutes les données</button>
-          <p class="curve-caption" style="margin-top:8px;">Efface définitivement : historique (30 jours), identité, aliments ajoutés manuellement et compteurs personnels.</p>
-        </div>
       </div>
     </div>
   </div>
@@ -697,9 +692,9 @@
           <path d="M12 7v5l3 2"/>
         </svg>
         <h3 style="color:#B04A3E;margin-top:12px;">Votre période d'essai est terminée</h3>
-        <p>Merci d'avoir testé Glycotrace ! Pour continuer à utiliser l'application, contactez l'éditeur pour obtenir votre code d'activation.</p>
-        <button type="button" id="trialExpiredOkBtn" class="reset-btn" style="margin:14px auto 0;width:auto;display:inline-block;">Comprendre</button>
-        <button type="button" id="openActivationFromExpiredBtn" class="primary" style="margin:10px auto 0;width:auto;display:block;padding:12px 28px;">J'ai un code d'activation</button>
+        <p>Cette version de test est arrivée à expiration. Pour continuer à utiliser l'application, entrez votre code d'activation.</p>
+        <p style="margin:6px 0 0;font-size:0.85rem;color:var(--muted);">Vous ne possédez pas de code ? Contactez l'éditeur de Glycotrace pour l'acquérir.</p>
+        <button type="button" id="openActivationFromExpiredBtn" class="primary" style="margin:18px auto 0;width:auto;display:inline-block;padding:12px 28px;">J'ai un code d'activation</button>
       </div>
     </div>
   </div>
@@ -1277,7 +1272,7 @@ const TRIAL_KEY = 'glycotrace:trialStart';
 const TRIAL_DAYS = 3;
 const LICENSE_KEY = 'glycotrace:license';
 const ACTIVATION_CODE = 'GLYCO2026AB';
-const ACTIVATION_ENDPOINT = 'const ACTIVATION_ENDPOINT = 'https://script.google.com/macros/s/AKfycbymGufaTF-pZ6cPjK4egfELoryMq31Tc5d1ytEr99ZJbQ1G7wYQQ0NYiPY5guMsap_Ppg/exec';
+const ACTIVATION_ENDPOINT = 'https://script.google.com/macros/s/AKfycbymGufaTF-pZ6cPjK4egfELoryMq31Tc5d1ytEr99ZJbQ1G7wYQQ0NYiPY5guMsap_Ppg/exec';
 const activationOkBtn = document.getElementById('activationOkBtn');
 const trialBtn = document.getElementById('trialBtn');
 const trialExpiredOverlay = document.getElementById('trialExpiredOverlay');
@@ -1398,11 +1393,8 @@ function updateTrialUI(){
   }
 }
 
-document.getElementById('trialExpiredOkBtn').addEventListener('click', ()=>{
-  trialExpiredOverlay.classList.remove('open');
-});
 trialExpiredOverlay.addEventListener('click', (e)=>{
-  if(e.target === trialExpiredOverlay) trialExpiredOverlay.classList.remove('open');
+  if(e.target === trialExpiredOverlay && isLicensed()) trialExpiredOverlay.classList.remove('open');
 });
 document.getElementById('trialInfoOkBtn').addEventListener('click', ()=>{
   trialInfoOverlay.classList.remove('open');
@@ -1435,24 +1427,6 @@ activationOverlay.addEventListener('click', (e)=>{
   if(e.target === activationOverlay) activationOverlay.classList.remove('open');
 });
 updateTrialUI();
-
-document.getElementById('resetAllBtn').addEventListener('click', ()=>{
-  const confirmed = window.confirm(
-    "Cette action va effacer DÉFINITIVEMENT toutes les données de Glycotrace sur cet appareil : " +
-    "historique complet (30 jours), identité et aliments ajoutés manuellement.\n\n" +
-    "Cette action est irréversible. Continuer ?"
-  );
-  if(!confirmed) return;
-
-  const keysToRemove = [];
-  for(let i=0;i<localStorage.length;i++){
-    const key = localStorage.key(i);
-    if(key && key.startsWith('glycotrace:')) keysToRemove.push(key);
-  }
-  keysToRemove.forEach(k => localStorage.removeItem(k));
-
-  window.location.reload();
-});
 
 // --- Identité (Nom / Prénom) ---
 const IDENTITY_KEY = 'glycotrace:identity';
@@ -2039,7 +2013,7 @@ function startEditRow(btn, e){
   const tr = btn.closest('tr');
   tr.innerHTML = `
     <td>${e.name}</td>
-    <td><input type="number" id="edit-qty" class="edit-num" min="1" value="${e.qty}"></td>
+    <td><input type="text" inputmode="decimal" pattern="[0-9]*" id="edit-qty" class="edit-num" min="1" value="${e.qty}"></td>
     <td colspan="2"><input type="time" id="edit-time" value="${e.time || ''}"></td>
     <td class="num"><button class="del-btn" data-save="${e._i}">✔</button>
     <button class="del-btn" data-cancel>✕</button></td>
@@ -2049,7 +2023,6 @@ function startEditRow(btn, e){
   const editQty = tr.querySelector('#edit-qty');
   const editTime = tr.querySelector('#edit-time');
   editQty.focus();
-  editQty.select();
   const doSave = ()=>{
     const qty = parseFloat(editQty.value);
     if(!(qty > 0)){ tr.innerHTML = ''; render(); return; }
