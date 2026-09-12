@@ -386,9 +386,11 @@
     font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--primary-dark);
     background:var(--surface-2);padding:1px 7px;border-radius:6px;margin-right:6px;font-weight:600;
   }
-  .edit-num{
+  td .edit-num{
     width:80px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
-    font-family:'IBM Plex Mono',monospace;font-size:0.9rem;background:var(--surface);color:var(--ink);
+    font-family:'IBM Plex Mono',monospace;font-size:0.9rem;font-weight:600;
+    background:var(--surface);color:var(--ink);caret-color:var(--ink);
+    -webkit-text-fill-color:var(--ink);opacity:1;
   }
   td input[type=time]{padding:5px 8px;border:1px solid var(--line);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.85rem;background:var(--surface);color:var(--ink);}
   .empty-log{color:var(--muted);font-size:0.88rem;padding:18px 4px;text-align:center;font-style:italic;}
@@ -2013,7 +2015,7 @@ function startEditRow(btn, e){
   const tr = btn.closest('tr');
   tr.innerHTML = `
     <td>${e.name}</td>
-    <td><input type="text" inputmode="decimal" pattern="[0-9]*" id="edit-qty" class="edit-num" min="1" value="${e.qty}"></td>
+    <td><input type="number" id="edit-qty" class="edit-num" min="1" value="${e.qty}"></td>
     <td colspan="2"><input type="time" id="edit-time" value="${e.time || ''}"></td>
     <td class="num"><button class="del-btn" data-save="${e._i}">✔</button>
     <button class="del-btn" data-cancel>✕</button></td>
@@ -2023,6 +2025,7 @@ function startEditRow(btn, e){
   const editQty = tr.querySelector('#edit-qty');
   const editTime = tr.querySelector('#edit-time');
   editQty.focus();
+  editQty.select();
   const doSave = ()=>{
     const qty = parseFloat(editQty.value);
     if(!(qty > 0)){ tr.innerHTML = ''; render(); return; }

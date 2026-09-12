@@ -1,4 +1,4 @@
-const CACHE_NAME = 'glycotrace-v1.4';
+﻿const CACHE_NAME = 'glycotrace-v1.5';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -32,7 +32,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== location.origin) return;
 
-  // Le HTML en priorité réseau (pour récupérer les mises à jour), sinon cache
+  // Le HTML en prioritÃ© rÃ©seau (pour rÃ©cupÃ©rer les mises Ã  jour), sinon cache
   if (request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
     event.respondWith(
       fetch(request)
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Ressources statiques : cache d'abord, puis réseau
+  // Ressources statiques : cache d'abord, puis rÃ©seau
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
